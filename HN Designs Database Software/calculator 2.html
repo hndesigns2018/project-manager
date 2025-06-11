@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>HN DESIGNS INTERIOR WORK CALCULATOR</title>
+  <style>
+    body {
+      font-family: Cambria, serif;
+      padding: 20px;
+      max-width: 800px;
+      margin: auto;
+      background-image: url('background.jpg'); /* Replace with your background image path */
+      background-size: cover;
+      background-repeat: no-repeat;
+      background-attachment: fixed;
+      background-position: center;
+      position: relative;
+    }
+
+    .top-left-logo {
+      position: absolute;
+      top: 20px;
+      left: -500px;
+      height: 300px;
+      border-radius: 12px; /* Rounded corners */
+    }
+	grand_total {
+ 	 font-weight: bold;
+  	background-color: #f0f8ff;
+	}
+
+
+    h1 {
+  text-align: center;
+  margin-top: 100px;
+  font-size: 35px;
+  color: #333;
+  text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.5);
+}
+
+    h2 {
+      color: #333;
+text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.5);
+    }
+
+    .section {
+      background: rgba(255, 255, 255, 0.9); /* Slightly transparent for background readability */
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      margin-bottom: 30px;
+    }
+
+    label {
+      margin-bottom: 5px;
+      display: block;
+      font-weight: 500;
+    }
+
+    input[type="number"] {
+      width: 100%;
+      padding: 10px;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      margin-bottom: 15px;
+      font-family: Cambria, serif;
+    }
+
+    button {
+      padding: 10px 20px;
+      background-color: #007bff;
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+      font-family: Cambria, serif;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+  </style>
+</head>
+<body>
+
+  <img src="logo.png" alt="Logo" class="top-left-logo">
+
+  <h1>HN DESIGNS INTERIOR WORK COST CALCULATOR</h1>
+<div class="section">
+  <h2>1. INTERIOR CONSULTANCY FEES</h2>
+  <label>Area (sqft): <input type="number" id="consult_area"></label>
+  <label>Rate (per sqft): <input type="number" id="consult_rate"></label>
+  <label><input type="checkbox" id="consult_gst"> Include 18% GST</label>
+  <label>Total Fee (Base): <input type="number" id="consult_base_total" readonly></label>
+  
+  <div style="display: flex; gap: 80px; align-items: center;">
+    <label style="flex: 1;">Total Fee (With GST if applied): 
+      <input type="number" id="consult_total" readonly>
+    </label>
+    <label style="flex: 1;">GST Amount: 
+      <input type="number" id="consult_gst_amount" readonly>
+    </label>
+  </div>
+
+  <button onclick="calcConsult()">Calculate</button>
+</div>
+  <div class="section">
+    <h2>2. FURNITURE WORK COST</h2>
+    <label>Area (sqft): <input type="number" id="furn_area"></label>
+    <label>Rate (per sqft): <input type="number" id="furn_rate"></label>
+    <label>Total Furniture Cost (₹): <input type="number" id="furn_total" readonly></label>
+    <button onclick="calcFurniture()">Calculate</button>
+  </div>
+
+  <div class="section">
+    <h2>3. FALSE CEILING</h2>
+    <label>Area (sqft): <input type="number" id="fc_area"></label>
+    <label>Extra Tray Area (30%): <input type="number" id="fc_tray" readonly></label>
+    <label>Total Area: <input type="number" id="fc_total_area" readonly></label>
+    <label>Rate (per sqft): <input type="number" id="fc_rate"></label>
+    <label>Total Cost (₹): <input type="number" id="fc_total" readonly></label>
+    <button onclick="calcFalseCeiling()">Calculate</button>
+  </div>
+
+  <div class="section">
+    <h2>4. FLOORING</h2>
+    <label>Area (sqft): <input type="number" id="fl_area"></label>
+    <label>Extra Skirting Area (15%): <input type="number" id="fl_skirt" readonly></label>
+    <label>Total Area: <input type="number" id="fl_total_area" readonly></label>
+    <label>Rate (per sqft): <input type="number" id="fl_rate"></label>
+    <label>Total Cost (₹): <input type="number" id="fl_total" readonly></label>
+    <button onclick="calcFlooring()">Calculate</button>
+  </div>
+
+  <div class="section">
+    <h2>5. PAINT</h2>
+    <label>Total Floor Area (sqft): <input type="number" id="paint_area"></label>
+    <label>Total Paint Area (3 X Total Floor Area): <input type="number" id="paint_total_area" readonly></label>
+    <label>Rate (per sqft): <input type="number" id="paint_rate"></label>
+    <label>Total Paint Cost (₹): <input type="number" id="paint_total_cost" readonly></label>
+    <button onclick="calcPaint()">Calculate</button>
+  </div>
+
+
+
+<div class="section">
+  <h2>6. ELECTRIFICATION</h2>
+  <label>Area (sqft): <input type="number" id="elec_area"></label>
+  <label>Rate (per sqft): <input type="number" id="elec_rate"></label>
+  <label>Total Electrification Cost (₹): <input type="number" id="elec_total" readonly></label>
+  <button onclick="calcElectrification()">Calculate</button>
+</div>
+
+
+<div class="section">
+  <h2>GRAND TOTAL</h2>
+  <label>Total Amount (₹): <input type="number" id="grand_total" readonly></label>
+  <p id="grand_total_words" style="font-family: Cambria, serif; font-size: 16px; font-weight: bold; color: #333; margin-top: 10px;"></p>
+
+
+  <button onclick="calcGrandTotal()">Calculate Total</button>
+</div>
+<div class="section">
+  <h2>EXPORT REPORT</h2>
+ <div style="font-size: 14px; color: #555; margin-top: 15px; line-height: 1.6;">
+    <strong>Note:</strong><br>
+    - This is only an estimated lump sum amount and not the exact final cost.<br>
+    - All costs are inclusive of GST.<br>
+    - Transportation cost will be borne by the client.<br>
+    - Estimate will vary according to the quality of materials.
+  </div>
+  <button onclick="downloadReport()">Download Report (Word)</button>
+</div>
+
+
+  <script>
+    function calcFalseCeiling() {
+      let area = parseFloat(document.getElementById('fc_area').value) || 0;
+      let rate = parseFloat(document.getElementById('fc_rate').value) || 0;
+      let tray = area * 0.3;
+      let total_area = area + tray;
+      let total = total_area * rate;
+      document.getElementById('fc_tray').value = tray.toFixed(2);
+      document.getElementById('fc_total_area').value = total_area.toFixed(2);
+      document.getElementById('fc_total').value = total.toFixed(2);
+    }
+
+    function calcFlooring() {
+      let area = parseFloat(document.getElementById('fl_area').value) || 0;
+      let rate = parseFloat(document.getElementById('fl_rate').value) || 0;
+      let skirting = area * 0.15;
+      let total_area = area + skirting;
+      let total = total_area * rate;
+      document.getElementById('fl_skirt').value = skirting.toFixed(2);
+      document.getElementById('fl_total_area').value = total_area.toFixed(2);
+      document.getElementById('fl_total').value = total.toFixed(2);
+    }
+
+    function calcPaint() {
+      let area = parseFloat(document.getElementById('paint_area').value) || 0;
+      let rate = parseFloat(document.getElementById('paint_rate').value) || 0;
+      let total_area = area * 3;
+      let total = total_area * rate;
+      document.getElementById('paint_total_area').value = total_area.toFixed(2);
+      document.getElementById('paint_total_cost').value = total.toFixed(2);
+    }
+
+function calcConsult() {
+  let area = parseFloat(document.getElementById('consult_area').value) || 0;
+  let rate = parseFloat(document.getElementById('consult_rate').value) || 0;
+  let gstChecked = document.getElementById('consult_gst').checked;
+
+  let baseTotal = area * rate;
+  let gstAmount = gstChecked ? baseTotal * 0.18 : 0;
+  let totalWithGst = baseTotal + gstAmount;
+
+  document.getElementById('consult_base_total').value = baseTotal.toFixed(2);
+  document.getElementById('consult_total').value = totalWithGst.toFixed(2);
+  document.getElementById('consult_gst_amount').value = gstAmount.toFixed(2);
+}
+
+
+    function calcFurniture() {
+      let area = parseFloat(document.getElementById('furn_area').value) || 0;
+      let rate = parseFloat(document.getElementById('furn_rate').value) || 0;
+      let total = area * rate;
+      document.getElementById('furn_total').value = total.toFixed(2);
+    }
+function calcElectrification() {
+  let area = parseFloat(document.getElementById('elec_area').value) || 0;
+  let rate = parseFloat(document.getElementById('elec_rate').value) || 0;
+  let total = area * rate;
+  document.getElementById('elec_total').value = total.toFixed(2);
+}
+
+function calcGrandTotal() {
+  let fc = parseFloat(document.getElementById('fc_total').value) || 0;
+  let fl = parseFloat(document.getElementById('fl_total').value) || 0;
+  let pt = parseFloat(document.getElementById('paint_total_cost').value) || 0;
+  let cs = parseFloat(document.getElementById('consult_total').value) || 0;
+  let fn = parseFloat(document.getElementById('furn_total').value) || 0;
+  let el = parseFloat(document.getElementById('elec_total').value) || 0;
+
+  let grand = fc + fl + pt + cs + fn + el;
+  document.getElementById('grand_total').value = grand.toFixed(2);
+document.getElementById('grand_total_words').innerText = numberToWordsIndian(grand);
+
+
+}
+
+
+function numberToWordsIndian(num) {
+  const a = [
+    '', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten',
+    'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen',
+    'Seventeen', 'Eighteen', 'Nineteen'
+  ];
+  const b = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+
+  const inWords = (n) => {
+    if (n < 20) return a[n];
+    if (n < 100) return b[Math.floor(n / 10)] + (n % 10 ? ' ' + a[n % 10] : '');
+    if (n < 1000) return a[Math.floor(n / 100)] + ' Hundred' + (n % 100 ? ' and ' + inWords(n % 100) : '');
+    if (n < 100000) return inWords(Math.floor(n / 1000)) + ' Thousand' + (n % 1000 ? ' ' + inWords(n % 1000) : '');
+    if (n < 10000000) return inWords(Math.floor(n / 100000)) + ' Lakh' + (n % 100000 ? ' ' + inWords(n % 100000) : '');
+    return inWords(Math.floor(n / 10000000)) + ' Crore' + (n % 10000000 ? ' ' + inWords(n % 10000000) : '');
+  };
+
+  const parts = num.toFixed(2).split('.');
+  const rupees = parseInt(parts[0], 10);
+  const paise = parseInt(parts[1], 10);
+
+  let result = '';
+
+  if (rupees > 0) {
+    result += inWords(rupees) + ' Rupees';
+  }
+
+  if (paise > 0) {
+    result += (rupees > 0 ? ' and ' : '') + inWords(paise) + ' Paise';
+  }
+
+  return result ? result + ' Only' : 'Zero Rupees Only';
+}
+
+
+function downloadReport() {
+  const getVal = id => document.getElementById(id)?.value || "0";
+
+  const content = `
+    <div style="font-family: Cambria, serif; padding: 20px;">
+      <div style="border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 20px;">
+     
+        <h2 style="margin: 10px 0 0;">HN DESIGNS</h2>
+        <p>Swmdwn Nagar Bengtol Gate, Hirimba Road<br>Chapaguri, Assam, 783380<br>Email: hndesigns2018@gmail.com | Phone: +91-8721042287</p>
+      </div>
+
+      <h1 style="text-align: center;">HN DESIGNS INTERIOR WORK COST</h1>
+      <p><strong>CONSULTANCY FEES:</strong> ₹${getVal("consult_total")}</p>
+      <p><strong>FALSE CEILING:</strong> ₹${getVal("fc_total")}</p>
+      <p><strong>FLOORING:</strong> ₹${getVal("fl_total")}</p>
+      <p><strong>PAINT:</strong> ₹${getVal("paint_total_cost")}</p>
+      <p><strong>CONSULTANCY FEES:</strong> ₹${getVal("consult_total")}</p>
+      <p><strong>FURNITURE WORK COST:</strong> ₹${getVal("furn_total")}</p>
+      <p><strong>ELECTRIFICATION:</strong> ₹${getVal("elec_total")}</p>
+      <h2>TOTAL ESTIMATED VALUE: ₹${getVal("grand_total")}</h2>
+
+    </div>
+  `;
+
+  const header = `
+    <html xmlns:o='urn:schemas-microsoft-com:office:office'
+          xmlns:w='urn:schemas-microsoft-com:office:word'
+          xmlns='http://www.w3.org/TR/REC-html40'>
+    <head><title>Interior Report</title></head><body>${content}</body></html>
+  `;
+
+  const blob = new Blob(['\ufeff', header], {
+    type: 'application/msword'
+  });
+
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = 'Interior_Report.doc';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
+
+  </script>
+
+</body>
+</html>

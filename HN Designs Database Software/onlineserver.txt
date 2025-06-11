@@ -1,0 +1,46 @@
+const express = require('express');
+const path = require('path');
+const { Pool } = require('pg');
+const bodyParser = require('body-parser');
+const cors = require('cors');
+
+const app = express();
+app.use(cors());
+app.use(bodyParser.json());
+
+// ✅ Serve HTML/JS/CSS from frontend folder
+app.use(express.static(path.join(__dirname, 'frontend')));
+
+// ✅ PostgreSQL Connection
+const pool = new Pool({
+  user: process.env.PGUSER,
+  host: process.env.PGHOST,
+  database: process.env.PGDATABASE,
+  password: process.env.PGPASSWORD,
+  port: process.env.PGPORT,
+});
+
+// ✅ Homepage
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'frontend', 'project.html'));
+});
+
+// ✅ Example: Get all projects
+app.get('/projects', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM projects ORDER BY id DESC');
+    res.json(result.rows);
+  } catch (err) {
+    console.error('Error fetching projects:', err.message);
+    res.status(500).send('Database Error');
+  }
+});
+
+// ✅ Add more routes below (consultancy, carpenter, etc.)
+// ...
+
+// ✅ Start server
+const port = process.env.PORT || 3000;
+app.listen(port, () => {
+  console.log(`🚀 Server running on port ${port}`);
+});

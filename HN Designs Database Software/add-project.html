@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Add Project</title>
+  <style>
+    body {
+      font-family: Cambria, serif;
+      background: #f3f3f3;
+      padding: 40px;
+    }
+    h2 {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    form {
+      max-width: 400px;
+      margin: auto;
+      background: white;
+      padding: 25px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    input, button {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      font-family: Cambria, serif;
+      font-size: 16px;
+    }
+    button {
+      background: #2e8b57;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #246b45;
+    }
+  </style>
+</head>
+<body>
+  <h2>➕ Add New Project</h2>
+  <form id="projectForm">
+    <input type="text" id="name" placeholder="Project Name" required />
+    <input type="text" id="location" placeholder="Location" required />
+    <input type="date" id="start_date" required />
+    <button type="submit">Save Project</button>
+    <p id="msg"></p>
+  </form>
+
+  <script>
+    const form = document.getElementById("projectForm");
+    const msg = document.getElementById("msg");
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const project = {
+        name: document.getElementById("name").value,
+        location: document.getElementById("location").value,
+        start_date: document.getElementById("start_date").value,
+      };
+
+      try {
+        const res = await fetch("http://localhost:3000/projects", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(project)
+        });
+
+        if (res.ok) {
+          msg.textContent = "✅ Project saved!";
+          form.reset();
+        } else {
+          msg.textContent = "❌ Failed to save project";
+        }
+      } catch (err) {
+        msg.textContent = "❌ Error occurred";
+        console.error(err);
+      }
+    });
+  </script>
+</body>
+</html>

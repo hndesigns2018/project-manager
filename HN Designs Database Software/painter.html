@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Painter Details | HN Designs</title>
+  <style>
+    body {
+      font-family: Cambria, serif;
+      margin: 0;
+      padding: 30px;
+      background: url('images/bg10.jpg') no-repeat center center fixed;
+      background-size: cover;
+    }
+    h2 {
+      text-align: center;
+	  font-size: 32px;
+      color: #2C2E39;
+	   text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.5);
+    }
+    .form-section {
+      max-width: 800px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      padding: 20px;
+    }
+    label {
+      display: block;
+      margin-top: 10px;
+      font-weight: bold;
+    }
+    input, textarea {
+      width: 100%;
+      padding: 8px;
+      margin-bottom: 10px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-family: Cambria, serif;
+    }
+    input[readonly] {
+      background-color: #eee;
+    }
+    button {
+      padding: 10px 20px;
+      background-color: #2C2E39;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-family: Cambria, serif;
+      margin-top: 10px;
+    }
+    button:hover {
+      background-color: #444654;
+    }
+  </style>
+</head>
+<body>
+  <h2>🎨 PAINTER PAYMENT SUMMARY</h2>
+  <div class="form-section">
+    <label for="painterName">Painter Name</label>
+    <input type="text" id="painter_name" placeholder="Enter name..." />
+
+
+    <label for="totalAmount">Total Amount</label>
+    <input type="number" id="totalAmount" placeholder="Enter total amount..." />
+
+    <label for="paidAmount">Paid Amount</label>
+    <input type="number" id="paidAmount" readonly />
+
+    <label for="balance">Balance</label>
+    <input type="number" id="balance" readonly />
+
+    <label for="remarks">Remarks</label>
+    <textarea id="remarks" placeholder="Any remarks..."></textarea>
+
+    <button onclick="savePainterDetails()">💾 Save Details</button>
+    <button onclick="goToPayments()">🔧 View/Edit Payment Details</button>
+  </div>
+
+  <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const projectId = urlParams.get("project_id");
+
+    async function loadPainterDetails() {
+      try {
+        const res = await fetch(`http://localhost:3000/painter?project_id=${projectId}`);
+        if (!res.ok) throw new Error("Network response was not ok");
+        const data = await res.json();
+
+        console.log("🎨 Painter Data Received:", data);
+
+        if (data) {
+          document.getElementById("painter_name").value = data.painter_name || "";
+          document.getElementById("totalAmount").value = data.total || 0;
+          document.getElementById("paidAmount").value = data.paid || 0;
+          document.getElementById("balance").value = data.balance || 0;
+          document.getElementById("remarks").value = data.remarks || "";
+        }
+      } catch (err) {
+        console.error("❌ Error loading painter details:", err);
+        alert("❌ Failed to load painter data");
+      }
+    }
+
+  async function savePainterDetails() {
+  const total = parseFloat(document.getElementById("totalAmount").value) || 0;
+
+  try {
+    const res = await fetch(`http://localhost:3000/painter-payments/${projectId}`);
+    const payments = await res.json();
+    const paid = payments.reduce((sum, p) => sum + parseFloat(p.amount || 0), 0);
+    const balance = total - paid;
+
+    const data = {
+      project_id: projectId,
+      painter_name: document.getElementById("painter_name").value,  // ✅ fixed ID and key
+      total,
+      paid,
+      balance,
+      remarks: document.getElementById("remarks").value
+    };
+
+    const saveRes = await fetch("http://localhost:3000/painter", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data)
+    });
+
+    const text = await saveRes.text();
+    console.log("🧾 Server response:", text);
+
+    if (saveRes.ok) {
+      alert("✅ Painter details saved!");
+      location.reload();
+    } else {
+      alert("❌ Error saving painter details.");
+    }
+  } catch (err) {
+    console.error("❌ Save error:", err);
+    alert("❌ Failed to save painter data.");
+  }
+}
+
+
+    function goToPayments() {
+      window.location.href = `paymentPainter.html?project_id=${projectId}`;
+    }
+
+    window.onload = loadPainterDetails;
+  </script>
+</body>
+</html>

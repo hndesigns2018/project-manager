@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>HN Designs | Project Dashboard</title>
+  <style>
+    body {
+      font-family: Cambria, serif;
+      margin: 0;
+      padding: 0;
+      background: url('images/bg2.jpg') no-repeat center center fixed;
+      background-size: cover;
+    }
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background-color: #749E9C;
+      color: #333;
+      padding: 20px 30px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+      border-bottom: 2px solid #608185;
+    }
+    .logo {
+      display: flex;
+      align-items: center;
+    }
+    .logo img {
+      height: 80px;
+      transform: scale(1.4);
+      margin-right: 550px;
+    }
+    .logo h1 {
+      font-size: 30px;
+      margin: 0;
+      letter-spacing: 1.2px;
+      color: #2C2E39;
+      text-shadow: 1px 1px 2px rgba(0,0,0,0.15);
+    }
+    .container {
+      padding: 30px;
+      max-width: 1000px;
+      margin: auto;
+      background: rgba(255,255,255,0.97);
+      border-radius: 12px;
+      margin-top: 30px;
+    }
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    .logout-btn {
+      padding: 8px 15px;
+      background: #d9534f;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+   table {
+  border-collapse: separate;
+  border-spacing: 0;
+  width: 100%;
+  background: white;
+  border: 2px solid #ccc;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.08);
+}
+
+    th, td {
+      border: 1px solid #999;
+      padding: 10px;
+      text-align: center;
+    }
+    th {
+      background-color: #D8DFDA;
+    }
+    .action-btn {
+      padding: 6px 12px;
+      background: #c0392b;
+      color: white;
+      border: none;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+    .form-section {
+      background: white;
+      padding: 20px;
+      margin-top: 30px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    .form-section input, .form-section button {
+      padding: 10px;
+      margin: 10px 5px;
+      font-family: Cambria, serif;
+    }
+    .form-section button {
+      background: #2e8b57;
+      color: white;
+      border: none;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+	
+.calculator-btn {
+  display: block;
+  margin: 30px auto 0;
+  padding: 12px 25px;
+  font-size: 18px;
+  font-family: Cambria, serif;
+  background: linear-gradient(135deg, #6abf69, #4e944f);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+  transition: all 0.3s ease-in-out;
+}
+
+.calculator-btn:hover {
+  background: linear-gradient(135deg, #4e944f, #2e7d32);
+  transform: scale(1.03);
+}
+
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="logo">
+      <img src="images/logo.png" alt="HN Designs Logo">
+      <h1>WELCOME TO HN DESIGNS SERVER</h1>
+    </div>
+    <button class="logout-btn" onclick="logout()">🚪 Logout</button>
+  </header>
+
+  <div class="container">
+    <div class="top-bar">
+      <h2>📋 ALL PROJECTS</h2>
+    </div>
+
+    <table id="projectTable">
+      <thead>
+        <tr>
+          <th>Sl. No.</th>
+          <th>Project Name</th>
+          <th>Location</th>
+          <th>Start Date</th>
+          <th>End Date</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+
+    <div class="form-section">
+      <h3>Add New Project</h3>
+      <input type="text" id="name" placeholder="Project Name" required />
+      <input type="text" id="location" placeholder="Location" required />
+      <input type="date" id="start_date" required />
+      <input type="date" id="end_date" required />
+      <button onclick="addProject()">Add Project</button>
+    </div>
+
+    <button class="calculator-btn" onclick="openCalculator()">OPEN INTERIOR CALCULATOR</button>
+
+  </div>
+
+  <script>
+    // ✅ Check login using sessionStorage (not localStorage)
+    if (sessionStorage.getItem('loggedIn') !== 'true') {
+      window.location.href = 'login.html';
+    }
+
+    // 🔒 Protect against browser back button
+    window.addEventListener('pageshow', function (event) {
+      if (event.persisted && sessionStorage.getItem('loggedIn') !== 'true') {
+        window.location.href = 'login.html';
+      }
+    });
+
+    function logout() {
+      sessionStorage.removeItem('loggedIn');
+      window.location.href = 'login.html';
+    }
+
+    function loadProjects() {
+      fetch("http://localhost:3000/projects")
+        .then(res => res.json())
+        .then(data => {
+          const tbody = document.querySelector("#projectTable tbody");
+          tbody.innerHTML = "";
+          data.forEach((project, index) => {
+            const row = document.createElement("tr");
+            row.innerHTML = `
+              <td>${index + 1}</td>
+              <td><a href="project.html?id=${project.id}">${project.name}</a></td>
+              <td>${project.location}</td>
+              <td>${project.start_date.split('T')[0]}</td>
+              <td>${project.end_date ? project.end_date.split('T')[0] : '—'}</td>
+              <td><button class="action-btn" onclick="deleteProject(${project.id})">🗑️ Delete</button></td>
+            `;
+            tbody.appendChild(row);
+          });
+        })
+        .catch(err => {
+          alert("❌ Failed to load project data");
+          console.error(err);
+        });
+    }
+
+    function deleteProject(id) {
+      if (confirm("Are you sure you want to delete this project?")) {
+        fetch(`http://localhost:3000/projects/${id}`, {
+          method: 'DELETE'
+        })
+        .then(res => {
+          if (res.ok) {
+            alert("✅ Project deleted");
+            loadProjects();
+          } else {
+            alert("❌ Failed to delete project");
+          }
+        })
+        .catch(err => {
+          alert("❌ Error while deleting");
+          console.error(err);
+        });
+      }
+    }
+
+    function addProject() {
+      const name = document.getElementById('name').value;
+      const location = document.getElementById('location').value;
+      const start_date = document.getElementById('start_date').value;
+      const end_date = document.getElementById('end_date').value;
+
+      if (!name || !location || !start_date) {
+        alert("❗ Please fill all fields");
+        return;
+      }
+
+      fetch("http://localhost:3000/projects", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, location, start_date, end_date })
+      })
+      .then(res => {
+        if (res.ok) {
+          alert("✅ Project added");
+          document.getElementById('name').value = "";
+          document.getElementById('location').value = "";
+          document.getElementById('start_date').value = "";
+          document.getElementById('end_date').value = "";
+          loadProjects();
+        } else {
+          alert("❌ Failed to add project");
+        }
+      })
+      .catch(err => {
+        alert("❌ Error adding project");
+        console.error(err);
+      });
+    }
+
+    function openCalculator() {
+      const url = new URL(window.location.href);
+      const projectId = url.searchParams.get("project_id") || 'demo';
+      window.open(`interior-calculator.html?project_id=${projectId}`, '_blank');
+    }
+
+    // Initial load
+    loadProjects();
+  </script>
+
+</body>
+</html>

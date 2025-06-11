@@ -1,0 +1,68 @@
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wardrobe Estimator</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; background: #f4f4f4; }
+    h1 { text-align: center; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; background: #fff; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
+    th { background-color: #e3e3e3; }
+    input[type="number"] { width: 100%; box-sizing: border-box; }
+    tfoot td { font-weight: bold; background: #f0f0f0; }
+  </style>
+</head>
+<body>
+  <h1>Wardrobe Work Estimator</h1>
+  <table>
+    <thead>
+      <tr>
+        <th>LENGTH (ft)</th>
+        <th>HEIGHT (ft)</th>
+        <th>FT INCH</th>
+        <th>MM</th>
+        <th>TOTAL AREA (sqft)</th>
+        <th>TOTAL AREA (sqmm)</th>
+        <th>RATE PER SQFT</th>
+        <th>TOTAL AMOUNT</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><input type="number" id="length" onchange="calculate()"></td>
+        <td><input type="number" id="height" onchange="calculate()"></td>
+        <td id="ftInch">-</td>
+        <td id="mm">-</td>
+        <td id="totalSqft">-</td>
+        <td id="totalSqmm">-</td>
+        <td><input type="number" id="rate" onchange="calculate()"></td>
+        <td id="totalAmount">-</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <script>
+    function calculate() {
+      const length = parseFloat(document.getElementById('length').value) || 0;
+      const height = parseFloat(document.getElementById('height').value) || 0;
+      const rate = parseFloat(document.getElementById('rate').value) || 0;
+
+      const areaSqft = length * height;
+      const areaSqmm = areaSqft * 92903.04; // 1 sqft = 92903.04 sqmm
+
+      const ft = Math.floor(length);
+      const inch = Math.round((length - ft) * 12);
+      const mm = length * 304.8; // 1 ft = 304.8 mm
+
+      const total = areaSqft * rate;
+
+      document.getElementById('ftInch').innerText = `${ft}' ${inch}"`;
+      document.getElementById('mm').innerText = mm.toFixed(2);
+      document.getElementById('totalSqft').innerText = areaSqft.toFixed(2);
+      document.getElementById('totalSqmm').innerText = areaSqmm.toFixed(2);
+      document.getElementById('totalAmount').innerText = total.toFixed(2);
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Payment Details | HN Designs</title>
+
+  <style>
+    body {
+      font-family: Cambria, serif;
+      padding: 30px;
+      background: url('images/bg17.jpg') no-repeat center center fixed;
+      background-size: cover;
+    }
+    h2 {
+      text-align: center;
+	  font-size: 32px;
+      color: #2C2E39;
+	   text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.5);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+      background: white;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 10px;
+      text-align: center;
+    }
+    th {
+      background-color: #e0f2e9;
+    }
+    button {
+      padding: 10px 15px;
+      background-color: #2e8b57;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      font-family: Cambria, serif;
+      cursor: pointer;
+      margin-top: 20px;
+    }
+    button:hover {
+      background-color: #246b45;
+    }
+    .summary-box {
+      background: #fff;
+      padding: 20px;
+      margin: 20px auto;
+      max-width: 800px;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+  </style>
+</head>
+<body>
+
+  <h2>💳 PAYMENT DETAILS</h2>
+
+  <div class="summary-box">
+    <p><strong>Total Amount:</strong> <span id="totalAmount">₹ 0</span></p>
+    <p><strong>Total Received:</strong> <span id="totalReceived">₹ 0</span></p>
+    <p><strong>Balance:</strong> <span id="balance">₹ 0</span></p>
+  </div>
+
+  <table id="paymentTable">
+    <thead>
+      <tr>
+        <th>Sl. No.</th>
+        <th>Amount</th>
+        <th>Date</th>
+        <th>Remark / Details</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody id="paymentBody">
+      <!-- Rows will be added dynamically -->
+    </tbody>
+  </table>
+
+  <button onclick="addPaymentRow()">➕ Add Row</button>
+  <button onclick="savePayments()">📏 Save Payments</button>
+
+  <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const projectId = urlParams.get('project_id');
+    const paymentBody = document.getElementById("paymentBody");
+
+    function loadConsultancySummary() {
+      fetch(`http://localhost:3000/consultancy/${projectId}`)
+        .then(res => res.json())
+        .then(data => {
+          if (!data || data.length === 0) return;
+
+          const c = data[0];
+          const totalAmount = c.gst_enabled
+            ? parseFloat(c.total_after_gst || c.total_amount || 0)
+            : parseFloat(c.total_amount || 0);
+
+          const paid = parseFloat(c.paid || 0);
+          const balance = totalAmount - paid;
+
+          document.getElementById("totalAmount").textContent = `₹ ${totalAmount.toFixed(2)}`;
+          document.getElementById("totalReceived").textContent = `₹ ${paid.toFixed(2)}`;
+          document.getElementById("balance").textContent = `₹ ${balance.toFixed(2)}`;
+        })
+        .catch(err => {
+          console.error("❌ Error loading consultancy summary:", err);
+        });
+    }
+
+    async function loadExistingPayments() {
+      try {
+        const res = await fetch(`http://localhost:3000/payments/${projectId}`);
+        const data = await res.json();
+        data.forEach(payment => {
+          const formattedDate = new Date(payment.date).toISOString().split('T')[0];
+           addPaymentRow(payment.amount, formattedDate, payment.remarks);
+
+        });
+      } catch (err) {
+        console.error("❌ Error loading existing payments:", err);
+      }
+    }
+
+    function addPaymentRow(amount = "", date = "", remark = "") {
+      const row = document.createElement("tr");
+      const slno = paymentBody.children.length + 1;
+
+      row.innerHTML = `
+        <td>${slno}</td>
+        <td><input class="amount" type="number" value="${amount}" oninput="calculateSummary()" /></td>
+        <td><input class="date" type="date" value="${date}" /></td>
+        <td><input class="remark" type="text" value="${remark}" /></td>
+        <td><button onclick="this.closest('tr').remove(); updateSlNos(); calculateSummary()">❌ Delete</button></td>
+      `;
+
+      paymentBody.appendChild(row);
+      calculateSummary();
+    }
+
+    function updateSlNos() {
+      const rows = paymentBody.querySelectorAll("tr");
+      rows.forEach((row, i) => {
+        row.children[0].textContent = i + 1;
+      });
+    }
+
+    function calculateSummary() {
+      let totalReceived = 0;
+      const rows = paymentBody.querySelectorAll("tr");
+      rows.forEach(row => {
+        const amount = parseFloat(row.querySelector(".amount").value) || 0;
+        totalReceived += amount;
+      });
+
+      const total = parseFloat(document.getElementById("totalAmount").textContent.replace("₹", "")) || 0;
+      const balance = total - totalReceived;
+
+      document.getElementById("totalReceived").textContent = `₹ ${totalReceived.toFixed(2)}`;
+      document.getElementById("balance").textContent = `₹ ${balance.toFixed(2)}`;
+    }
+
+    async function savePayments() {
+      const rows = paymentBody.querySelectorAll("tr");
+      const payments = [];
+      let totalReceived = 0;
+
+      rows.forEach(row => {
+        const amount = parseFloat(row.querySelector(".amount").value) || 0;
+        const date = row.querySelector(".date").value;
+        const remark = row.querySelector(".remark").value;
+
+        totalReceived += amount;
+
+        payments.push({ project_id: projectId, amount, date, remarks: remark });
+      });
+
+      try {
+        await fetch("http://localhost:3000/payments", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ project_id: projectId, payments })
+        });
+
+        const consultancyRes = await fetch(`http://localhost:3000/consultancy/${projectId}`);
+        const consultancyData = await consultancyRes.json();
+        if (!consultancyData.length) throw new Error("Consultancy not found");
+
+        const consultancy = consultancyData[0];
+        const consultancyId = consultancy.id;
+
+        const total = consultancy.gst_enabled
+          ? parseFloat(consultancy.total_after_gst || consultancy.total_amount || 0)
+          : parseFloat(consultancy.total_amount || 0);
+        const balance = total - totalReceived;
+
+        await fetch(`http://localhost:3000/consultancy/${consultancyId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            client_name: consultancy.client_name,
+            location: consultancy.location,
+            description: consultancy.description,
+            rate_per_sqft: consultancy.rate_per_sqft,
+            area_total: consultancy.area_total,
+            total_amount: consultancy.total_amount,
+            gst: consultancy.gst,
+            total_after_gst: consultancy.total_after_gst,
+            paid: totalReceived,
+            balance: balance,
+            remarks: consultancy.remarks,
+            gst_enabled: consultancy.gst_enabled
+          })
+        });
+
+        alert("✅ Payment saved and consultancy updated!");
+        location.reload();
+
+      } catch (err) {
+        console.error("❌ Error:", err.message);
+        alert("❌ Failed to save payment or update consultancy");
+      }
+    }
+
+    window.onload = () => {
+      loadConsultancySummary();
+      loadExistingPayments();
+    };
+  </script>
+</body>
+</html>

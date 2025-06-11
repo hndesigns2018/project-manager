@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Interior Estimator | HN Designs</title>
+   <script src="./libs/jspdf.umd.min.js"></script>
+  <script src="./libs/jspdf.plugin.autotable.min.js"></script>
+  <script src="./libs/xlsx.full.min.js"></script>
+  <style>
+    body {
+      font-family: Cambria, serif;
+      padding: 20px;
+      background: url('images/bg1.jpg') no-repeat center center fixed;
+      background-size: cover;
+    }
+    input, button {
+      font-family: Cambria, serif !important;
+      text-align: center !important;
+    }
+    .room-section {
+      background-color: rgba(255,255,255,0.95);
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 30px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 6px;
+      text-align: center;
+    }
+    th {
+      background-color: #f4f4f4;
+    }
+    .btn {
+      margin: 5px;
+      padding: 8px 16px;
+      border: none;
+      border-radius: 6px;
+      font-family: Cambria, serif;
+      cursor: pointer;
+    }
+    .btn-add {
+      background-color: #2e8b57;
+      color: white;
+    }
+    .btn-delete {
+      background-color: #d9534f;
+      color: white;
+    }
+    .btn-save {
+      background-color: #0069d9;
+      color: white;
+    }
+    .grand-total-box {
+      font-size: 24px;
+      text-align: center;
+      margin-top: 30px;
+      padding: 10px;
+      background-color: white;
+      border-radius: 8px;
+      width: fit-content;
+      margin-left: auto;
+      margin-right: auto;
+    }
+  </style>
+</head>
+<body>
+  <h2 style="text-align:center; font-size: 36px;">HN DESIGNS INTERIOR ESTIMATOR</h2>
+
+  <div id="rooms-container"></div>
+
+  <div class="grand-total-box">
+    GRAND TOTAL: <span id="masterGrandTotal">0.00</span>
+  </div>
+
+  <div style="text-align:center; margin-top: 20px;">
+    <button class="btn btn-add" onclick="addNewRoom()">+ Add Room</button>
+    <button class="btn btn-save" onclick="saveAllRooms()">💾 Save All</button>
+	  <button class="btn btn-save" onclick="exportEstimatorPDF()">📄 Export PDF</button>
+  <button class="btn btn-save" onclick="exportEstimatorExcel()">📊 Export Excel</button>
+  </div>
+
+  <script>
+    const project_id = new URLSearchParams(window.location.search).get("project_id");
+    if (!project_id) {
+      alert("❌ project_id missing in URL!");
+    }
+
+   function addNewRoom(roomData = null) {
+  const roomId = `room_${Date.now()}`;
+  const roomHTML = `
+    <div class="room-section" id="${roomId}">
+      <label>Enter Room Name: <input type="text" class="room-name-input" value="${roomData?.room_name || ''}" oninput="this.value = this.value.toUpperCase()">
+</label>
+      <table>
+        <thead>
+          <tr>
+            <th>SL. NO</th><th>ITEM</th><th>LENGTH (ft)</th><th>(inch)</th><th>HEIGHT (ft)</th><th>(inch)</th><th>TOTAL AREA (sqft)</th><th>RATE</th><th>TOTAL</th><th>DELETE</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <div style="margin-top:10px;">
+        <button class="btn btn-add" onclick="addRow('${roomId}')">+ Add Row</button>
+        <button class="btn btn-delete" onclick="deleteRoom('${roomId}')">Delete Room</button>
+      </div>
+      <div style="margin-top:10px; font-size:18px;">TOTAL: <span class="room-total">0.00</span></div>
+    </div>`;
+  document.getElementById("rooms-container").insertAdjacentHTML("beforeend", roomHTML);
+
+  if (roomData?.items?.length) {
+    for (const item of roomData.items) {
+      addRow(roomId, item);
+    }
+  } else {
+    addRow(roomId);
+  }
+}
+
+
+function addRow(roomId, itemData = null) {
+  const tbody = document.querySelector(`#${roomId} tbody`);
+  const rowCount = tbody.rows.length + 1;
+  const row = tbody.insertRow();
+  row.innerHTML = `
+    <td>${rowCount}</td>
+    <td><input type="text" value="${itemData?.item || ''}" oninput="this.value = this.value.toUpperCase()"></td>
+
+    <td><input type="number" value="${itemData?.length_ft === 0 ? '0' : (itemData?.length_ft || '')}"></td>
+    <td><input type="number" value="${itemData?.length_in === 0 ? '0' : (itemData?.length_in || '')}"></td>
+    <td><input type="number" value="${itemData?.height_ft === 0 ? '0' : (itemData?.height_ft || '')}"></td>
+    <td><input type="number" value="${itemData?.height_in === 0 ? '0' : (itemData?.height_in || '')}"></td>
+
+    <td><input type="text" readonly value="${itemData?.area?.toFixed(2) || ''}"></td>
+    <td><input type="number" value="${itemData?.rate === 0 ? '0' : (itemData?.rate || '')}"></td>
+    <td><input type="text" readonly value="${itemData?.amount?.toFixed(2) || ''}"></td>
+    <td><button onclick="deleteRow(this, '${roomId}')">Delete</button></td>
+  `;
+
+  [...row.querySelectorAll("input")].forEach(input => {
+    input.addEventListener("input", () => calculateRoomTotal(roomId));
+  });
+
+  calculateRoomTotal(roomId);
+}
+
+
+ function deleteRow(btn, roomId) {
+  const row = btn.closest("tr");
+  row.remove();
+  calculateRoomTotal(roomId);
+
+  // Re-number SL. NO
+  const rows = document.querySelectorAll(`#${roomId} tbody tr`);
+  rows.forEach((tr, index) => {
+    tr.cells[0].innerText = index + 1;
+  });
+}
+
+
+    function deleteRoom(roomId) {
+      document.getElementById(roomId).remove();
+      calculateMasterTotal();
+    }
+
+    function calculateRoomTotal(roomId) {
+      const tbody = document.querySelector(`#${roomId} tbody`);
+      let total = 0;
+      [...tbody.rows].forEach(row => {
+        const lenFt = parseFloat(row.cells[2].querySelector("input").value) || 0;
+        const lenIn = parseFloat(row.cells[3].querySelector("input").value) || 0;
+        const htFt = parseFloat(row.cells[4].querySelector("input").value) || 0;
+        const htIn = parseFloat(row.cells[5].querySelector("input").value) || 0;
+        const area = (lenFt + lenIn / 12) * (htFt + htIn / 12);
+        const rate = parseFloat(row.cells[7].querySelector("input").value) || 0;
+        const amount = area * rate;
+        row.cells[6].querySelector("input").value = area.toFixed(2);
+        row.cells[8].querySelector("input").value = amount.toFixed(2);
+        total += amount;
+      });
+      document.querySelector(`#${roomId} .room-total`).innerText = total.toFixed(2);
+      calculateMasterTotal();
+    }
+
+    function calculateMasterTotal() {
+      const totals = [...document.querySelectorAll(".room-total")].map(span => parseFloat(span.innerText));
+      const grandTotal = totals.reduce((sum, val) => sum + val, 0);
+      document.getElementById("masterGrandTotal").innerText = grandTotal.toFixed(2);
+    }
+
+    function saveAllRooms() {
+      if (!project_id) {
+        alert("❌ Project ID missing");
+        return;
+      }
+
+      const roomsData = [];
+
+      document.querySelectorAll(".room-section").forEach(room => {
+        const roomName = room.querySelector(".room-name-input").value.trim() || "Untitled Room";
+        const roomTotal = parseFloat(room.querySelector(".room-total").innerText) || 0;
+        const rows = room.querySelectorAll("tbody tr");
+        const items = [];
+
+        rows.forEach(row => {
+          const cells = row.querySelectorAll("td");
+          items.push({
+            item: cells[1].querySelector("input").value || "",
+            length_ft: parseFloat(cells[2].querySelector("input").value) || 0,
+            length_in: parseFloat(cells[3].querySelector("input").value) || 0,
+            height_ft: parseFloat(cells[4].querySelector("input").value) || 0,
+            height_in: parseFloat(cells[5].querySelector("input").value) || 0,
+            area: parseFloat(cells[6].querySelector("input").value) || 0,
+            rate: parseFloat(cells[7].querySelector("input").value) || 0,
+            amount: parseFloat(cells[8].querySelector("input").value) || 0
+          });
+        });
+
+      if (roomName !== "" && items.length > 0) {
+  roomsData.push({
+    room_name: roomName,
+    total: roomTotal,
+    items
+  });
+}
+
+      });
+
+      fetch("http://localhost:3000/estimator", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          project_id,
+          rooms: roomsData
+        })
+      })
+      .then(res => {
+        if (!res.ok) throw new Error(`❌ Server returned ${res.status}`);
+        return res.json();
+      })
+      .then(data => {
+        alert("✅ Saved successfully!");
+      })
+      .catch(err => {
+        console.error("❌ Save failed:", err);
+        alert("Failed to save rooms.");
+      });
+    }
+
+    // Start with one room by default
+   
+	window.onload = async function () {
+  if (!project_id) {
+    alert("❌ Project ID missing from URL");
+    return;
+  }
+
+  try {
+    const apiBase = "http://localhost:3000";  // ✅ BASE URL defined here
+    const res = await fetch(`${apiBase}/estimator/${project_id}`);  // ✅ FULL URL used
+
+    if (!res.ok) throw new Error("Failed to load saved estimator data");
+
+    const savedRooms = await res.json();
+
+    if (savedRooms.length === 0) {
+      addNewRoom(); // show blank one if no saved data
+    } else {
+      for (const room of savedRooms) {
+        addNewRoom(room);
+      }
+    }
+  } catch (err) {
+    console.error("❌ Fetch error:", err);
+    addNewRoom(); // fallback
+  }
+};
+if (!project_id) alert("❌ project_id missing in URL!");
+
+    // All functions: addNewRoom, addRow, deleteRow, deleteRoom, calculateRoomTotal, calculateMasterTotal, saveAllRooms (same as before)
+
+function getBase64FromImage(url, callback) {
+  const img = new Image();
+  img.crossOrigin = "anonymous";
+  img.onload = function () {
+    const canvas = document.createElement("canvas");
+    canvas.width = img.width;
+    canvas.height = img.height;
+    const ctx = canvas.getContext("2d");
+    ctx.drawImage(img, 0, 0);
+    const dataURL = canvas.toDataURL("image/png");
+    callback(dataURL);
+  };
+  img.src = url;
+}
+
+function exportEstimatorPDF() {
+  getBase64FromImage("images/logo.png", function (logoImg) {
+    getBase64FromImage("images/signature.jpg", function (signatureImg) {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({ orientation: "portrait", unit: "pt", format: "a4" });
+
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const pageHeight = doc.internal.pageSize.getHeight();
+      let finalY = 40;
+
+      // 🖼️ Logo top-left
+      doc.addImage(logoImg, 'PNG', 50, 30, 70, 60);
+
+      // 🏢 Letterhead
+      doc.setFont("times", "bold");
+      doc.setFontSize(20);
+      doc.text("HN DESIGNS", pageWidth / 2, 60, { align: "center" });
+
+      doc.setFont("times", "normal");
+      doc.setFontSize(10);
+      doc.text("Swmdwn Nagar, Bengtol Gate, Chirang.", pageWidth / 2, 75, { align: "center" });
+      doc.text("Email: hndesigns2018@gmail.com | Phone: +91-8721042287", pageWidth / 2, 88, { align: "center" });
+
+      doc.setLineWidth(0.5);
+      doc.line(40, 95, pageWidth - 40, 95);
+      finalY = 90;
+
+      // 📄 Room-wise content
+      document.querySelectorAll(".room-section").forEach((room, idx) => {
+        const roomName = room.querySelector(".room-name-input").value.trim() || `Room ${idx + 1}`;
+        const total = room.querySelector(".room-total").innerText;
+
+        // 🏷️ Room Title
+        doc.setFont("times", "bold");
+        doc.setFontSize(12);
+        finalY += 30;
+        doc.text(`${roomName} (Total: Rs. ${total})`, pageWidth / 2, finalY, { align: "center" });
+        finalY += 5;
+
+        // 📊 Room Table
+        const rows = [];
+      room.querySelectorAll("tbody tr").forEach(tr => {
+  const cells = tr.querySelectorAll("td");  // 👈 This line was missing!
+
+  const length = `${cells[2].querySelector("input")?.value || 0}'${cells[3].querySelector("input")?.value || 0}"`;
+  const height = `${cells[4].querySelector("input")?.value || 0}'${cells[5].querySelector("input")?.value || 0}"`;
+
+  rows.push([
+    cells[0].innerText.trim(),
+    cells[1].querySelector("input")?.value || "",
+    length,
+    height,
+    cells[6].querySelector("input")?.value || "",
+    cells[7].querySelector("input")?.value || "",
+    cells[8].querySelector("input")?.value || ""
+  ]);
+});
+
+
+        // ➕ Add total row below
+ rows.push([
+  {
+    content: "TOTAL", 
+    colSpan: 6,  // Because your table has 7 columns total
+    styles: { halign: 'center', fontStyle: 'bold', fillColor: [240, 240, 240] }
+  },
+  { 
+    content: `Rs. ${total}`, 
+    styles: { fontStyle: 'bold', fillColor: [240, 240, 240], halign: 'center' }
+  }
+]);
+
+
+doc.autoTable({
+  head: [["SL", "ITEM", "LENGTH", "HEIGHT", "AREA", "RATE", "TOTAL"]],
+  body: rows,
+  startY: finalY + 5,
+
+  // ✅ Table width is fixed (from columnStyles), so manually center
+  tableWidth: 'auto',
+  startX: (doc.internal.pageSize.getWidth() - 440) / 2,  // 👈 This will actually center it
+
+  styles: {
+    font: "times",
+    fontSize: 8,
+    halign: 'center',
+    textColor: [0, 0, 0],
+    lineColor: [0, 0, 0],
+    lineWidth: 0.2
+  },
+
+  headStyles: {
+    fillColor: [255, 224, 102],
+    textColor: [0, 0, 0],
+    fontStyle: 'bold'
+  },
+
+  columnStyles: {
+    0: { cellWidth: 30 },
+    1: { cellWidth: 200 },
+    2: { cellWidth: 60 },
+    3: { cellWidth: 60 },
+    4: { cellWidth: 50 },
+    5: { cellWidth: 50 },
+    6: { cellWidth: 70 }
+  },
+
+  didParseCell: function (data) {
+    const lastRow = rows.length - 1;
+    if (data.section === 'body' && data.row.index === lastRow) {
+      data.cell.styles.fillColor = [240, 240, 240];
+      data.cell.styles.fontStyle = 'bold';
+    }
+  },
+
+  theme: 'grid'
+});
+
+
+
+
+        finalY = doc.lastAutoTable.finalY + 20;
+      });
+
+      // 🧮 Grand Total
+      const masterTotal = document.getElementById("masterGrandTotal").innerText;
+      doc.setFont("times", "bold");
+      doc.setFontSize(12);
+      doc.text(`GRAND TOTAL: Rs. ${masterTotal}`, pageWidth - 200, finalY); // 👉 Right side
+
+      // ✍️ Signature image (above line)
+      doc.addImage(signatureImg, 'JPEG', pageWidth - 180, pageHeight - 90, 110, 30);
+
+      // ✍️ Signatory line + label
+      doc.line(pageWidth - 250, pageHeight - 60, pageWidth - 40, pageHeight - 60);
+      doc.setFont("times", "normal");
+      doc.setFontSize(10);
+      doc.text("Authorized Signatory", pageWidth - 160, pageHeight - 45);
+
+      // 💾 Save it
+      doc.save("HN_DESIGNS_Estimate.pdf");
+    });
+  });
+}
+
+
+
+function exportEstimatorExcel() {
+  const wb = XLSX.utils.book_new();
+  const rows = [];
+
+  document.querySelectorAll(".room-section").forEach((room, idx) => {
+    const roomName = room.querySelector(".room-name-input").value.trim() || `Room ${idx + 1}`;
+
+    // 🏷️ Room Name Row
+    rows.push([roomName]); // Row with just the name (merged later)
+    const roomRowIndex = rows.length - 1;
+
+    // 🔠 Header Row
+    rows.push(["SL", "ITEM", "LENGTH", "HEIGHT", "AREA", "RATE", "TOTAL"]);
+    const headerRowIndex = rows.length - 1;
+
+    room.querySelectorAll("tbody tr").forEach(tr => {
+      const cells = tr.querySelectorAll("td");
+      if (cells.length >= 9) {
+        const item = cells[1].querySelector("textarea")?.value || cells[1].querySelector("input")?.value || "";
+        const len = `${cells[2].querySelector("input").value || 0}'${cells[3].querySelector("input").value || 0}"`;
+        const ht = `${cells[4].querySelector("input").value || 0}'${cells[5].querySelector("input").value || 0}"`;
+        const area = cells[6].querySelector("input").value || "";
+        const rate = cells[7].querySelector("input").value || "";
+        const total = cells[8].querySelector("input").value || "";
+
+        rows.push([
+          cells[0].innerText.trim(),
+          item,
+          len,
+          ht,
+          area,
+          rate,
+          total
+        ]);
+      }
+    });
+
+    // ➕ Room Total Row
+    const total = room.querySelector(".room-total").innerText;
+    rows.push(["", "", "", "", "", "Room Total", total]);
+    rows.push([]); // Spacer
+  });
+
+  // 🧾 GRAND TOTAL ROW
+  const masterTotal = document.getElementById("masterGrandTotal").innerText;
+  const grandRowIndex = rows.length;
+  rows.push(["GRAND TOTAL", `Rs ${masterTotal}`]);
+
+  // 🧾 Sheet create
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+
+  // 📏 Set column widths
+  ws['!cols'] = [
+    { wch: 10 },
+    { wch: 60 },
+    { wch: 15 },
+    { wch: 15 },
+    { wch: 15 },
+    { wch: 15 },
+    { wch: 20 }
+  ];
+
+  // 🔗 Merge room name rows (A to G)
+  if (!ws['!merges']) ws['!merges'] = [];
+  rows.forEach((row, rIdx) => {
+    if (row.length === 1) {
+      ws['!merges'].push({ s: { r: rIdx, c: 0 }, e: { r: rIdx, c: 6 } });
+    }
+  });
+
+  // 🔗 Merge GRAND TOTAL row (B to G for total value)
+  ws['!merges'].push({ s: { r: grandRowIndex, c: 1 }, e: { r: grandRowIndex, c: 6 } });
+
+  // 🎨 Apply Cambria + Bold + Center + Wrap
+  const range = XLSX.utils.decode_range(ws['!ref']);
+  for (let R = range.s.r; R <= range.e.r; R++) {
+    for (let C = range.s.c; C <= range.e.c; C++) {
+      const cellAddress = XLSX.utils.encode_cell({ r: R, c: C });
+      if (!ws[cellAddress]) continue;
+      ws[cellAddress].s = {
+        font: { name: "Cambria", sz: 11 },
+        alignment: { vertical: "center", horizontal: "center", wrapText: true }
+      };
+
+      // Bold headers
+      if (rows[R][0] === "SL" || rows[R][0]?.toString().startsWith("GRAND TOTAL") || rows[R].length === 1) {
+        ws[cellAddress].s.font.bold = true;
+      }
+    }
+  }
+
+  XLSX.utils.book_append_sheet(wb, ws, "Interior Estimate");
+  XLSX.writeFile(wb, "Interior_Estimate_SingleSheet.xlsx");
+}
+
+
+
+
+	
+
+  </script>
+  
+   
+</body>
+</html>

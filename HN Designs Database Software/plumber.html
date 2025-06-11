@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Plumber Details | HN Designs</title>
+  <style>
+    body {
+      font-family: Cambria, serif;
+      margin: 0;
+      padding: 30px;
+      background: url('images/bg13.jpg') no-repeat center center fixed;
+      background-size: cover;
+    }
+    h2 {
+      text-align: center;
+      font-size: 32px;
+      color: #2C2E39;
+	   text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.5);
+    }
+    .form-section {
+      max-width: 800px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      padding: 20px;
+    }
+    label {
+      display: block;
+      margin-top: 10px;
+      font-weight: bold;
+    }
+    input, textarea {
+      width: 100%;
+      padding: 8px;
+      margin-bottom: 10px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-family: Cambria, serif;
+    }
+    input[readonly] {
+      background-color: #eee;
+    }
+    button {
+      padding: 10px 20px;
+      background-color: #2e8b57;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-family: Cambria, serif;
+      margin-top: 10px;
+      margin-right: 10px;
+    }
+    button:hover {
+      background-color: #246b45;
+    }
+  </style>
+</head>
+<body>
+  <h2>🚰 PLUMBER CONTRACTOR DETAILS</h2>
+  <div class="form-section">
+    <label for="contractorName">Plumber Name</label>
+    <input type="text" id="contractorName" placeholder="Enter plumber name..." />
+
+    <label for="totalAmount">Total Amount</label>
+    <input type="number" id="totalAmount" placeholder="Enter total amount..." />
+
+    <label for="paidAmount">Paid Amount</label>
+    <input type="number" id="paidAmount" readonly />
+
+    <label for="balance">Balance</label>
+    <input type="number" id="balance" readonly />
+
+    <label for="remarks">Remarks</label>
+    <textarea id="remarks" placeholder="Any remarks..."></textarea>
+
+    <button onclick="savePlumberDetails()">💾 Save Details</button>
+    <button onclick="goToPayments()">🔧 View/Edit Payment Details</button>
+  </div>
+
+  <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const projectId = urlParams.get("project_id");
+
+    function loadPlumberDetails() {
+      fetch(`http://localhost:3000/plumber/${projectId}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.length > 0) {
+            const d = data[0];
+            document.getElementById("contractorName").value = d.contractor_name || "";
+            document.getElementById("totalAmount").value = d.total || 0;
+            document.getElementById("paidAmount").value = d.paid || 0;
+            document.getElementById("balance").value = d.balance || 0;
+            document.getElementById("remarks").value = d.remarks || "";
+          }
+        })
+        .catch(err => console.error("❌ Error loading plumber details:", err));
+    }
+
+    function savePlumberDetails() {
+      const total = parseFloat(document.getElementById("totalAmount").value) || 0;
+
+      fetch(`http://localhost:3000/plumber-payments/${projectId}`)
+        .then(res => res.json())
+        .then(payments => {
+          const paid = payments.reduce((sum, p) => sum + parseFloat(p.amount || 0), 0);
+          const balance = total - paid;
+
+          const data = {
+            project_id: projectId,
+            contractor_name: document.getElementById("contractorName").value,
+            total,
+            paid,
+            balance,
+            remarks: document.getElementById("remarks").value
+          };
+
+          return fetch("http://localhost:3000/plumber", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(data)
+          });
+        })
+        .then(res => {
+          if (!res.ok) throw new Error("❌ Save failed.");
+          alert("✅ Plumber details saved!");
+          location.reload();
+        })
+        .catch(err => {
+          console.error("❌ Error saving:", err);
+          alert("❌ Failed to save data.");
+        });
+    }
+
+    function goToPayments() {
+      window.location.href = `paymentPlumber.html?project_id=${projectId}`;
+    }
+
+    window.onload = loadPlumberDetails;
+  </script>
+</body>
+</html>

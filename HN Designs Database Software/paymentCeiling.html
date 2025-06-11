@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>False Ceiling Payment Details</title>
+  <style>
+    body {
+      font-family: Cambria, serif;
+      padding: 30px;
+      background: url('images/bg7.jpg') no-repeat center center fixed;
+      background-size: cover;
+    }
+
+    h2 {
+      text-align: center;
+	  font-size: 32px;
+      color: #2C2E39;
+	   text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.5);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+      background: white;
+    }
+
+    th, td {
+      border: 1px solid #ccc;
+      padding: 10px;
+      text-align: center;
+    }
+
+    th {
+      background-color: #f3f3f3;
+    }
+
+    .summary-box {
+      background: #fff;
+      padding: 20px;
+      margin: 20px auto;
+      max-width: 800px;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+
+    button {
+      padding: 10px 15px;
+      margin-top: 20px;
+      font-family: Cambria, serif;
+      background-color: #2C2E39;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #444654;
+    }
+  </style>
+</head>
+<body>
+  <h2>🏗️ FALSE CEILING PAYMENT DETAILS</h2>
+
+  <div class="summary-box">
+    <p><strong>Total Amount:</strong> ₹ <span id="totalAmount">0.00</span></p>
+    <p><strong>Total Received:</strong> ₹ <span id="receivedAmount">0.00</span></p>
+    <p><strong>Balance:</strong> ₹ <span id="balanceAmount">0.00</span></p>
+  </div>
+
+  <table id="paymentTable">
+    <thead>
+      <tr>
+        <th>Sl. No.</th>
+        <th>Amount</th>
+        <th>Date</th>
+        <th>Details</th>
+        <th>Remarks</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody id="paymentBody"></tbody>
+  </table>
+
+  <button onclick="addPaymentRow()">➕ Add Row</button>
+  <button onclick="savePayments()">💾 Save Payments</button>
+
+  <script>
+    const projectId = new URLSearchParams(window.location.search).get("project_id");
+
+    function loadSummary() {
+      fetch(`http://localhost:3000/falseceiling?project_id=${projectId}`)
+        .then(res => res.json())
+        .then(data => {
+          const total = parseFloat(data?.total || 0);
+          const paid = parseFloat(data?.paid || 0);
+          const balance = total - paid;
+
+          document.getElementById("totalAmount").textContent = total.toFixed(2);
+          document.getElementById("receivedAmount").textContent = paid.toFixed(2);
+          document.getElementById("balanceAmount").textContent = balance.toFixed(2);
+        });
+    }
+
+    function loadPayments() {
+      fetch(`http://localhost:3000/paymentceiling?project_id=${projectId}`)
+        .then(res => res.json())
+        .then(data => {
+          const tbody = document.getElementById("paymentBody");
+          tbody.innerHTML = '';
+          data.forEach((pmt, index) => {
+            const date = new Date(pmt.date).toISOString().split('T')[0];
+            addPaymentRow(pmt.amount, date, pmt.details, pmt.remarks);
+          });
+        });
+    }
+
+    function addPaymentRow(amount = '', date = '', details = '', remarks = '') {
+      const tbody = document.getElementById("paymentBody");
+      const row = document.createElement("tr");
+
+      row.innerHTML = `
+        <td>${tbody.children.length + 1}</td>
+        <td><input type="number" class="amount" value="${amount}" /></td>
+        <td><input type="date" class="date" value="${date}" /></td>
+        <td><input type="text" class="details" value="${details}" /></td>
+        <td><input type="text" class="remarks" value="${remarks}" /></td>
+        <td><button onclick="deleteRow(this)">❌</button></td>
+      `;
+      tbody.appendChild(row);
+    }
+
+    function deleteRow(btn) {
+      const row = btn.closest("tr");
+      row.remove();
+      updateSlNos();
+    }
+
+    function updateSlNos() {
+      const rows = document.querySelectorAll("#paymentBody tr");
+      rows.forEach((row, i) => {
+        row.children[0].textContent = i + 1;
+      });
+    }
+
+    function savePayments() {
+      const rows = document.querySelectorAll("#paymentBody tr");
+      const payments = [];
+
+      rows.forEach(row => {
+        const amount = parseFloat(row.querySelector(".amount")?.value) || 0;
+        const date = row.querySelector(".date")?.value;
+        const details = row.querySelector(".details")?.value || '';
+        const remarks = row.querySelector(".remarks")?.value || '';
+
+        if (amount > 0 && date) {
+          payments.push({ amount, date, details, remarks });
+        }
+      });
+
+      // ✅ Even if no rows left, we send empty array to clear
+      fetch("http://localhost:3000/paymentceiling", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ project_id: projectId, payments })
+      })
+        .then(res => {
+          if (!res.ok) throw new Error("Failed to save");
+          return res.text();
+        })
+        .then(msg => {
+          alert("✅ Payments saved successfully!");
+          loadSummary();
+          loadPayments();
+        })
+        .catch(err => {
+          console.error("❌ Error saving payments:", err);
+          alert("❌ Failed to save payments");
+        });
+    }
+
+    window.onload = () => {
+      loadSummary();
+      loadPayments();
+    };
+  </script>
+</body>
+</html>

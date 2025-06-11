@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>False Ceiling Details | HN Designs</title>
+  <style>
+    body {
+      font-family: Cambria, serif;
+      margin: 0;
+      padding: 30px;
+      background: url('images/bg7.jpg') no-repeat center center fixed;
+      background-size: cover;
+    }
+
+    h2 {
+      text-align: center;
+	  font-size: 32px;
+      color: #2C2E39;
+	   text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.5);
+    }
+
+    .form-section {
+      max-width: 800px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      padding: 20px;
+    }
+
+    label {
+      display: block;
+      margin-top: 10px;
+      font-weight: bold;
+    }
+
+    input, textarea {
+      width: 100%;
+      padding: 8px;
+      margin-bottom: 10px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-family: Cambria, serif;
+    }
+
+    input[readonly] {
+      background-color: #eee;
+    }
+
+    button {
+      padding: 10px 20px;
+      background-color: #2C2E39;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-family: Cambria, serif;
+      margin-top: 10px;
+    }
+
+    button:hover {
+      background-color: #444654;
+    }
+  </style>
+</head>
+<body>
+  <h2>🪵 false ceiling summary</h2>
+  <div class="form-section">
+    <label for="name">Ceiling Contractor Name</label>
+    <input type="text" id="name" placeholder="e.g., Bubai">
+
+    <label for="total">Total Amount</label>
+    <input type="number" id="total" oninput="calculateBalance()" placeholder="e.g., 600000">
+
+    <label for="paid">Paid</label>
+    <input type="number" id="paid" readonly>
+
+    <label for="balance">Balance</label>
+    <input type="number" id="balance" readonly>
+
+    <label for="remarks">Remarks</label>
+    <textarea id="remarks" rows="3" placeholder="Any remarks..."></textarea>
+
+    <button onclick="saveFalseCeiling()">💾 Save</button>
+    <button onclick="viewPayments()">🧾 View/Edit Payment Details</button>
+  </div>
+
+  <script>
+    const projectId = new URLSearchParams(window.location.search).get("project_id");
+
+    function calculateBalance() {
+      const total = parseFloat(document.getElementById('total').value) || 0;
+      const paid = parseFloat(document.getElementById('paid').value) || 0;
+      document.getElementById('balance').value = total - paid;
+    }
+
+    async function loadFalseCeilingDetails() {
+      try {
+        const res = await fetch(`http://localhost:3000/falseceiling?project_id=${projectId}`);
+        if (!res.ok) return;
+
+        const data = await res.json();
+        if (data) {
+          document.getElementById('name').value = data.name || '';
+          document.getElementById('total').value = data.total || 0;
+          document.getElementById('paid').value = data.paid || 0;
+          document.getElementById('balance').value = data.balance || 0;
+          document.getElementById('remarks').value = data.remarks || '';
+        }
+      } catch (err) {
+        console.error("❌ Error loading false ceiling details:", err);
+      }
+    }
+
+    async function saveFalseCeiling() {
+      const total = parseFloat(document.getElementById('total').value) || 0;
+
+      try {
+        const paymentRes = await fetch(`http://localhost:3000/paymentceiling?project_id=${projectId}`);
+        const paymentData = await paymentRes.json();
+        const paid = paymentData.reduce((sum, p) => sum + parseFloat(p.amount || 0), 0);
+        const balance = total - paid;
+
+        const data = {
+          project_id: projectId,
+          name: document.getElementById('name').value,
+          total,
+          paid,
+          balance,
+          remarks: document.getElementById('remarks').value
+        };
+
+        const res = await fetch('http://localhost:3000/falseceiling', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+
+        if (res.ok) {
+          alert('✅ Saved successfully!');
+          location.reload();
+        } else {
+          throw new Error('Save failed');
+        }
+      } catch (err) {
+        console.error("❌ Error saving:", err);
+        alert('❌ Failed to save.');
+      }
+    }
+
+    function viewPayments() {
+      window.location.href = `paymentCeiling.html?project_id=${projectId}`;
+    }
+
+    window.onload = loadFalseCeilingDetails;
+  </script>
+</body>
+</html>

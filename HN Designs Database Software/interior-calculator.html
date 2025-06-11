@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>HN DESIGNS INTERIOR WORK CALCULATOR</title>
+  <style>
+    body {
+      font-family: Cambria, serif;
+      padding: 20px;
+      max-width: 800px;
+      margin: auto;
+      background-image: url('images/background.jpg');
+      background-size: cover;
+      background-repeat: no-repeat;
+      background-attachment: fixed;
+      background-position: center;
+    }
+
+    .section {
+      background: rgba(255, 255, 255, 0.95);
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      margin-bottom: 30px;
+    }
+
+    h1, h2 {
+      text-align: center;
+      text-shadow: 1px 1px 3px rgba(0,0,0,0.4);
+    }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: bold;
+    }
+
+    input[type="number"] {
+      width: 100%;
+      padding: 8px;
+      margin-bottom: 10px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      font-family: Cambria, serif;
+    }
+
+    button {
+      padding: 10px 20px;
+      font-family: Cambria, serif;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+	.top-left-logo {
+  position: absolute;
+  top: 40px;
+  left: 50px;
+  height: 200px;
+  border-radius: 12px;
+  z-index: 1000;
+}
+
+  </style>
+</head>
+<body>
+<img src="images/logo.png" alt="HN Designs Logo" class="top-left-logo">
+
+  <h1>HN DESIGNS INTERIOR WORK CALCULATOR</h1>
+
+  <div class="section">
+    <h2>1. CONSULTANCY FEES</h2>
+    <label>Area (sqft): <input type="number" id="consult_area"></label>
+    <label>Rate per sqft: <input type="number" id="consult_rate"></label>
+    <label><input type="checkbox" id="consult_gst"> Include GST (18%)</label>
+    <label>Total (Without GST): <input type="number" id="consult_base_total" readonly></label>
+    <label>GST Amount: <input type="number" id="consult_gst_amount" readonly></label>
+    <label>Total (With GST): <input type="number" id="consult_total" readonly></label>
+    <button onclick="calcConsult()">Calculate</button>
+  </div>
+
+  <div class="section">
+    <h2>2. FURNITURE</h2>
+    <label>Area (sqft): <input type="number" id="furn_area"></label>
+    <label>Rate per sqft: <input type="number" id="furn_rate"></label>
+    <label>Total: <input type="number" id="furn_total" readonly></label>
+    <button onclick="calcFurniture()">Calculate</button>
+  </div>
+
+  <div class="section">
+    <h2>3. FALSE CEILING</h2>
+    <label>Area (sqft): <input type="number" id="fc_area"></label>
+    <label>Tray Area (30%): <input type="number" id="fc_tray" readonly></label>
+    <label>Total Area: <input type="number" id="fc_total_area" readonly></label>
+    <label>Rate: <input type="number" id="fc_rate"></label>
+    <label>Total: <input type="number" id="fc_total" readonly></label>
+    <button onclick="calcFalseCeiling()">Calculate</button>
+  </div>
+
+  <div class="section">
+    <h2>4. FLOORING</h2>
+    <label>Area (sqft): <input type="number" id="fl_area"></label>
+    <label>Skirting (15%): <input type="number" id="fl_skirt" readonly></label>
+    <label>Total Area: <input type="number" id="fl_total_area" readonly></label>
+    <label>Rate: <input type="number" id="fl_rate"></label>
+    <label>Total: <input type="number" id="fl_total" readonly></label>
+    <button onclick="calcFlooring()">Calculate</button>
+  </div>
+
+  <div class="section">
+    <h2>5. PAINT</h2>
+    <label>Total Floor Area (sqft): <input type="number" id="paint_area"></label>
+    <label>Total Paint Area (×3): <input type="number" id="paint_total_area" readonly></label>
+    <label>Rate: <input type="number" id="paint_rate"></label>
+    <label>Total: <input type="number" id="paint_total_cost" readonly></label>
+    <button onclick="calcPaint()">Calculate</button>
+  </div>
+
+  <div class="section">
+    <h2>6. ELECTRIFICATION</h2>
+    <label>Area (sqft): <input type="number" id="elec_area"></label>
+    <label>Rate: <input type="number" id="elec_rate"></label>
+    <label>Total: <input type="number" id="elec_total" readonly></label>
+    <button onclick="calcElectrification()">Calculate</button>
+  </div>
+
+  <div class="section">
+    <h2>GRAND TOTAL</h2>
+    <label>Total (₹): <input type="number" id="grand_total" readonly></label>
+    <p id="grand_total_words" style="font-weight: bold;"></p>
+    <button onclick="calcGrandTotal()">Calculate Total</button>
+  </div>
+
+  <div class="section">
+    <h2>EXPORT REPORT</h2>
+    <button onclick="downloadReport()">Download Word Report</button>
+  </div>
+
+  <script>
+    const getVal = id => parseFloat(document.getElementById(id).value) || 0;
+
+    function calcConsult() {
+      const area = getVal('consult_area');
+      const rate = getVal('consult_rate');
+      const gst = document.getElementById('consult_gst').checked;
+      const base = area * rate;
+      const gstAmt = gst ? base * 0.18 : 0;
+      const total = base + gstAmt;
+      document.getElementById('consult_base_total').value = base.toFixed(2);
+      document.getElementById('consult_gst_amount').value = gstAmt.toFixed(2);
+      document.getElementById('consult_total').value = total.toFixed(2);
+    }
+
+    function calcFurniture() {
+      document.getElementById('furn_total').value = (getVal('furn_area') * getVal('furn_rate')).toFixed(2);
+    }
+
+    function calcFalseCeiling() {
+      const area = getVal('fc_area');
+      const tray = area * 0.3;
+      const totalArea = area + tray;
+      const total = totalArea * getVal('fc_rate');
+      document.getElementById('fc_tray').value = tray.toFixed(2);
+      document.getElementById('fc_total_area').value = totalArea.toFixed(2);
+      document.getElementById('fc_total').value = total.toFixed(2);
+    }
+
+    function calcFlooring() {
+      const area = getVal('fl_area');
+      const skirting = area * 0.15;
+      const totalArea = area + skirting;
+      const total = totalArea * getVal('fl_rate');
+      document.getElementById('fl_skirt').value = skirting.toFixed(2);
+      document.getElementById('fl_total_area').value = totalArea.toFixed(2);
+      document.getElementById('fl_total').value = total.toFixed(2);
+    }
+
+    function calcPaint() {
+      const area = getVal('paint_area');
+      const totalArea = area * 3;
+      const total = totalArea * getVal('paint_rate');
+      document.getElementById('paint_total_area').value = totalArea.toFixed(2);
+      document.getElementById('paint_total_cost').value = total.toFixed(2);
+    }
+
+    function calcElectrification() {
+      document.getElementById('elec_total').value = (getVal('elec_area') * getVal('elec_rate')).toFixed(2);
+    }
+
+    function calcGrandTotal() {
+      const grand = getVal('consult_total') + getVal('furn_total') + getVal('fc_total') + getVal('fl_total') + getVal('paint_total_cost') + getVal('elec_total');
+      document.getElementById('grand_total').value = grand.toFixed(2);
+      document.getElementById('grand_total_words').innerText = numberToWordsIndian(grand);
+    }
+
+    function numberToWordsIndian(num) {
+      const a = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten',
+        'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen',
+        'Seventeen', 'Eighteen', 'Nineteen'];
+      const b = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+
+      const inWords = (n) => {
+        if (n < 20) return a[n];
+        if (n < 100) return b[Math.floor(n / 10)] + (n % 10 ? ' ' + a[n % 10] : '');
+        if (n < 1000) return a[Math.floor(n / 100)] + ' Hundred' + (n % 100 ? ' and ' + inWords(n % 100) : '');
+        if (n < 100000) return inWords(Math.floor(n / 1000)) + ' Thousand ' + inWords(n % 1000);
+        if (n < 10000000) return inWords(Math.floor(n / 100000)) + ' Lakh ' + inWords(n % 100000);
+        return inWords(Math.floor(n / 10000000)) + ' Crore ' + inWords(n % 10000000);
+      };
+
+      const parts = num.toFixed(2).split('.');
+      const rupees = parseInt(parts[0]);
+      const paise = parseInt(parts[1]);
+      let result = '';
+      if (rupees > 0) result += inWords(rupees) + ' Rupees';
+      if (paise > 0) result += (rupees > 0 ? ' and ' : '') + inWords(paise) + ' Paise';
+      return result ? result + ' Only' : 'Zero Rupees Only';
+    }
+
+    function downloadReport() {
+      const get = id => document.getElementById(id)?.value || '0';
+      const content = `
+        <div style="font-family: Cambria; padding: 20px;">
+          <h2 style="text-align:center;">HN DESIGNS INTERIOR ESTIMATE</h2>
+          <p><b>Consultancy Fees:</b> ₹${get('consult_total')}</p>
+          <p><b>Furniture:</b> ₹${get('furn_total')}</p>
+          <p><b>False Ceiling:</b> ₹${get('fc_total')}</p>
+          <p><b>Flooring:</b> ₹${get('fl_total')}</p>
+          <p><b>Paint:</b> ₹${get('paint_total_cost')}</p>
+          <p><b>Electrification:</b> ₹${get('elec_total')}</p>
+          <h3>Total: ₹${get('grand_total')} /-</h3>
+          <p>${document.getElementById('grand_total_words').innerText}</p>
+        </div>`;
+
+      const blob = new Blob(['\ufeff', content], { type: 'application/msword' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = 'HN_Design_Estimate.doc';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  </script>
+</body>
+</html>
+

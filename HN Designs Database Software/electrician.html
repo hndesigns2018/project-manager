@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Electrician Details | HN Designs</title>
+  <style>
+    body {
+      font-family: Cambria, serif;
+      margin: 0;
+      padding: 30px;
+      background: url('images/bg21.jpg') no-repeat center center fixed;
+      background-size: cover;
+    }
+    h2 {
+      text-align: center;
+	  font-size: 32px;
+      color: #2C2E39;
+    }
+    .form-box {
+      max-width: 800px;
+      margin: auto;
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+    label {
+      display: block;
+      margin-top: 10px;
+      font-weight: bold;
+    }
+    input, textarea {
+      width: 100%;
+      padding: 8px;
+      margin-top: 4px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-family: Cambria, serif;
+    }
+    input[readonly] {
+      background-color: #f0f0f0;
+    }
+    button {
+      margin-top: 15px;
+      padding: 10px;
+      background-color: #2e8b57;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-family: Cambria, serif;
+    }
+    button:hover {
+      background-color: #246b45;
+    }
+  </style>
+</head>
+<body>
+  <h2>🔌 Electrician Details</h2>
+  <div class="form-box">
+    <label>Electrician Name</label>
+    <input type="text" id="electrician_name" />
+
+    <label>Total Amount</label>
+    <input type="number" id="electrician_total" />
+
+    <label>Paid</label>
+    <input type="text" id="electrician_paid" readonly />
+
+    <label>Balance</label>
+    <input type="text" id="electrician_balance" readonly />
+
+    <label>Remarks</label>
+    <textarea id="electrician_remarks"></textarea>
+
+    <button onclick="saveElectrician()">💾 Save</button>
+    <button onclick="navigateToPayment()">💳 View/Edit Payments</button>
+  </div>
+
+  <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const projectId = urlParams.get("project_id");
+
+    function loadElectricianDetails() {
+      fetch(`http://localhost:3000/electrician/${projectId}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data && data.length > 0) {
+            const e = data[0];
+            document.getElementById("electrician_name").value = e.electrician_name || '';
+            document.getElementById("electrician_total").value = e.total || '';
+            document.getElementById("electrician_paid").value = `₹${parseFloat(e.paid || 0).toFixed(2)}`;
+            document.getElementById("electrician_balance").value = `₹${parseFloat(e.balance || 0).toFixed(2)}`;
+
+            document.getElementById("electrician_remarks").value = e.remarks || '';
+          }
+        });
+    }
+
+    function saveElectrician() {
+      const electrician_name = document.getElementById("electrician_name").value;
+      const total = parseFloat(document.getElementById("electrician_total").value) || 0;
+      const remarks = document.getElementById("electrician_remarks").value;
+
+      fetch("http://localhost:3000/electrician", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          project_id: projectId,
+          electrician_name,
+          total,
+          remarks
+        })
+      })
+        .then(res => {
+          if (!res.ok) throw new Error("Save failed");
+          return res.text();
+        })
+        .then(() => {
+          alert("✅ Saved Successfully");
+          location.reload();
+        })
+        .catch(err => {
+          console.error("❌ Error saving electrician data:", err);
+          alert("❌ Save failed");
+        });
+    }
+
+    function navigateToPayment() {
+      window.location.href = `paymentElect.html?project_id=${projectId}`;
+    }
+
+    window.onload = loadElectricianDetails;
+  </script>
+</body>
+</html>

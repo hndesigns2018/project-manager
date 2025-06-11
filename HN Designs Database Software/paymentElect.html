@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Electrician Payments | HN Designs</title>
+  <style>
+    body {
+      font-family: Cambria, serif;
+      padding: 30px;
+      background: url('images/bg21.jpg') no-repeat center center fixed;
+      background-size: cover;
+    }
+    h2 {
+      text-align: center;
+	  font-size: 32px;
+      color: #2C2E39;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+      background: white;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 10px;
+      text-align: center;
+    }
+    th {
+      background-color: #e0f2e9;
+    }
+    button {
+      padding: 10px 15px;
+      background-color: #2e8b57;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      font-family: Cambria, serif;
+      cursor: pointer;
+      margin-top: 20px;
+    }
+    button:hover {
+      background-color: #246b45;
+    }
+    .summary-box {
+      background: #fff;
+      padding: 20px;
+      margin: 20px auto;
+      max-width: 800px;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+  </style>
+</head>
+<body>
+  <h2>💡 Electrician Payment Details</h2>
+
+  <div class="summary-box">
+    <p><strong>Total Amount:</strong> <span id="totalAmount">₹ 0</span></p>
+    <p><strong>Total Received:</strong> <span id="totalReceived">₹ 0</span></p>
+    <p><strong>Balance:</strong> <span id="balance">₹ 0</span></p>
+  </div>
+
+  <table id="paymentTable">
+    <thead>
+      <tr>
+        <th>Sl. No.</th>
+        <th>Amount</th>
+        <th>Date</th>
+        <th>Remarks</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody id="paymentBody"></tbody>
+  </table>
+
+  <button onclick="addPaymentRow()">➕ Add Row</button>
+  <button onclick="savePayments()">💾 Save Payments</button>
+
+  <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const projectId = urlParams.get("project_id");
+
+    function loadElectricianSummary() {
+      fetch(`http://localhost:3000/electrician/${projectId}`)
+        .then(res => res.json())
+        .then(data => {
+          if (!data || data.length === 0) return;
+          const e = data[0];
+          const total = parseFloat(e.total || 0);
+          const paid = parseFloat(e.paid || 0);
+          const balance = total - paid;
+
+          document.getElementById("totalAmount").textContent = `₹ ${total.toFixed(2)}`;
+          document.getElementById("totalReceived").textContent = `₹ ${paid.toFixed(2)}`;
+          document.getElementById("balance").textContent = `₹ ${balance.toFixed(2)}`;
+        });
+    }
+
+    function loadPreviousPayments() {
+      fetch(`http://localhost:3000/electrician-payments/${projectId}`)
+        .then(res => res.json())
+        .then(data => {
+          if (Array.isArray(data)) {
+            data.forEach(p => {
+              const formattedDate = new Date(p.date).toISOString().split('T')[0];
+              addPaymentRow(p.amount, formattedDate, p.remarks);
+            });
+          }
+        });
+    }
+
+    function addPaymentRow(amount = '', date = '', remarks = '') {
+      const tbody = document.getElementById("paymentBody");
+      const row = document.createElement("tr");
+      const slno = tbody.children.length + 1;
+
+      row.innerHTML = `
+        <td>${slno}</td>
+        <td><input type="number" class="amount" value="${amount}" oninput="calculateTotal()" /></td>
+        <td><input type="date" class="date" value="${date}" /></td>
+        <td><input type="text" class="remarks" value="${remarks}" /></td>
+        <td><button onclick="this.closest('tr').remove(); updateSlNos(); calculateTotal()">❌ Delete</button></td>
+      `;
+      tbody.appendChild(row);
+      calculateTotal();
+    }
+
+    function updateSlNos() {
+      const rows = document.querySelectorAll("#paymentBody tr");
+      rows.forEach((row, i) => {
+        row.children[0].textContent = i + 1;
+      });
+    }
+
+    function calculateTotal() {
+      const rows = document.querySelectorAll("#paymentBody tr");
+      let received = 0;
+      rows.forEach(row => {
+        const amt = parseFloat(row.querySelector(".amount").value) || 0;
+        received += amt;
+      });
+      const total = parseFloat(document.getElementById("totalAmount").textContent.replace("₹", "")) || 0;
+      document.getElementById("totalReceived").textContent = `₹ ${received.toFixed(2)}`;
+      document.getElementById("balance").textContent = `₹ ${(total - received).toFixed(2)}`;
+    }
+
+    function savePayments() {
+      const rows = document.querySelectorAll("#paymentBody tr");
+      const payments = [];
+
+      rows.forEach(row => {
+        payments.push({
+          amount: parseFloat(row.querySelector(".amount").value) || 0,
+          date: row.querySelector(".date").value,
+          remarks: row.querySelector(".remarks").value || ''
+        });
+      });
+
+      fetch("http://localhost:3000/electrician-payments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ project_id: projectId, payments })
+      })
+        .then(res => {
+          if (!res.ok) throw new Error("Save failed");
+          alert("✅ Payments saved successfully");
+          location.reload();
+        })
+        .catch(err => {
+          console.error("❌ Error saving payments:", err);
+          alert("❌ Failed to save payments");
+        });
+    }
+
+    window.onload = () => {
+      loadElectricianSummary();
+      loadPreviousPayments();
+    };
+  </script>
+</body>
+</html>

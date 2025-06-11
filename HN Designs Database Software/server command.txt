@@ -1,0 +1,2 @@
+cd C:\Users\ROG\project-manager-backend
+node server.js
