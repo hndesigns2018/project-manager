@@ -13,7 +13,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // Homepage route - open project.html by default
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'login.html'));
+  res.sendFile(path.join(__dirname, 'HN Designs Database Software', 'login.html'));
 });
 
 app.listen(PORT, () => {
