@@ -34,10 +34,11 @@ const pool = new Pool({
   user: process.env.PGUSER || 'postgres',
   host: process.env.PGHOST || 'localhost',
   database: process.env.PGDATABASE || 'project_manager',
-  password: process.env.PGPASSWORD || 'Hopun2327*',
-  port: process.env.PGPORT ? parseInt(process.env.PGPORT) : 5432,
+  password: process.env.PGPASSWORD || '',
+  port: parseInt(process.env.PGPORT || '5432'),
   ssl: process.env.PGSSLMODE === 'require' ? { rejectUnauthorized: false } : false
 });
+
 
 // ==================== PROJECT ROUTES ====================
 
