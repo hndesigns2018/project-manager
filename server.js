@@ -24,7 +24,7 @@ app.get('/', (req, res) => {
 app.listen(PORT, () => {
   console.log(`✅ Server is running on port ${PORT}`);
 });
-const port = 3000;
+
 
 app.use(cors());
 app.use(bodyParser.json());
@@ -1114,6 +1114,4 @@ app.use((err, req, res, next) => {
 
 // ==================== START SERVER ====================
 
-app.listen(port, () => {
-  console.log(`✅ Server running at http://localhost:${port}`);
-});
+
