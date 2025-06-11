@@ -5,8 +5,7 @@ const app = express();
 const path = require('path');
 const PORT = process.env.PORT || 3000;
 
-const app = express();
-const path = require('path');
+
 
 // Serve static files from frontend folder
 app.use(express.static(path.join(__dirname, 'public')));
