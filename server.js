@@ -1,21 +1,24 @@
 // ✅ Clean server.js without Carpenter and Electrician modules
 
 const express = require('express');
-const cors = require('cors');
-const bodyParser = require('body-parser');
-const { Pool } = require('pg');
+const app = express();
+const path = require('path');
+const PORT = process.env.PORT || 3000;
 
 const app = express();
 const path = require('path');
 
 // Serve static files from frontend folder
-app.use(express.static(path.join(__dirname, 'frontend')));
+app.use(express.static(path.join(__dirname, 'public')));
 
 // Homepage route - open project.html by default
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'frontend', 'project.html'));
+  res.sendFile(path.join(__dirname, 'public', 'login.html'));
 });
 
+app.listen(PORT, () => {
+  console.log(`✅ Server is running on port ${PORT}`);
+});
 const port = 3000;
 
 app.use(cors());
