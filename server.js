@@ -1,5 +1,7 @@
 // ✅ Clean server.js without Carpenter and Electrician modules
 
+const { Pool } = require('pg');
+
 const express = require('express');
 const app = express();
 const path = require('path');
