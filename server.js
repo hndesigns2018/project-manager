@@ -31,11 +31,12 @@ app.use(cors());
 app.use(bodyParser.json());
 
 const pool = new Pool({
-  user: 'postgres',
-  host: 'localhost',
-  database: 'project_manager',
-  password: 'Hopun2327*',
-  port: 5432,
+  user: process.env.PGUSER || 'postgres',
+  host: process.env.PGHOST || 'localhost',
+  database: process.env.PGDATABASE || 'project_manager',
+  password: process.env.PGPASSWORD || 'Hopun2327*',
+  port: process.env.PGPORT ? parseInt(process.env.PGPORT) : 5432,
+  ssl: process.env.PGSSLMODE === 'require' ? { rejectUnauthorized: false } : false
 });
 
 // ==================== PROJECT ROUTES ====================
